@@ -1,0 +1,120 @@
+version: '3.7'
+
+services:
+  http:
+    container_name: lw_http
+    image: nginx:latest
+    restart: always
+    ports:
+      - "8008:80"
+    volumes:
+      - ./public:/var/www/html/public
+      - ./docker/local/http/default.conf:/etc/nginx/conf.d/default.conf
+      - ./docker/local/http/log:/var/log/nginx
+    networks:
+      - lw_network
+
+  app:
+    container_name: lw
+    image: marcelofabianov/php8.2-fpm-pgsql:latest
+    restart: always
+    working_dir: /var/www/html
+    environment:
+      PHP_IDE_CONFIG: "serverName=app"
+      XDEBUG_CONFIG: remote_host=host.docker.internal
+    volumes:
+      - .:/var/www/html
+      - ./docker/local/php/php.ini:/usr/local/etc/php/php.ini
+    networks:
+      - lw_network
+    depends_on:
+      - app_db
+      - queue_db
+      - cache_db
+    ports:
+      - '9009:9000'
+      - '9003:9003'
+
+  workers:
+    container_name: lw_workers
+    image: marcelofabianov/php8.2-cli-pgsql
+    restart: always
+    working_dir: /var/www/html
+    environment:
+      XDEBUG_CONFIG: remote_host=host.docker.internal
+    volumes:
+      - .:/var/www/html
+    networks:
+      - lw_network
+    depends_on:
+      - app_db
+      - queue_db
+      - cache_db
+
+  queue_db:
+    container_name: lw_queue_db
+    image: redis:latest
+    restart: always
+    volumes:
+      - 'lw_queue_db:/data'
+    ports:
+      - "4003:6379"
+    networks:
+      - lw_network
+
+  cache_db:
+    container_name: lw_cache_db
+    image: redis:latest
+    restart: always
+    volumes:
+      - 'lw_cache_db:/data'
+    ports:
+      - "4001:6379"
+    networks:
+      - lw_network
+
+  app_db:
+    container_name: lw_app_db
+    image: postgres:15
+    restart: always
+    environment:
+      PGPASSWORD: '${DB_PASSWORD:-secret}'
+      POSTGRES_DB: '${DB_DATABASE:-lw_app_db}'
+      POSTGRES_USER: '${DB_USERNAME:-user}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+    volumes:
+      - 'lw_app_db:/var/lib/postgresql/data'
+    ports:
+      - "4015:5432"
+    networks:
+      - lw_network
+
+  app_db_testing:
+    container_name: lw_app_db_testing
+    image: postgres:15
+    restart: always
+    environment:
+      PGPASSWORD: '${DB_PASSWORD:-secret}'
+      POSTGRES_DB: '${DB_DATABASE:-lw_app_db_testing}'
+      POSTGRES_USER: '${DB_USERNAME:-user}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+    volumes:
+      - 'lw_app_db_testing:/var/lib/postgresql/data'
+    ports:
+      - "3215:5432"
+    networks:
+      - lw_network
+
+networks:
+  lw_network:
+    driver: bridge
+
+volumes:
+  lw_app_db:
+    driver: local
+  lw_queue_db:
+    driver: local
+  lw_cache_db:
+    driver: local
+  lw_app_db_testing:
+    driver: local

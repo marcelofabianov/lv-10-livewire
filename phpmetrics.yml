@@ -1,0 +1,29 @@
+excluded-dirs:
+    - tests
+    - vendor
+
+extensions:
+    - php
+
+excluded-files:
+    - '*Test.php'
+
+report-html: 'phpmetrics-report'
+
+ignore-violations-on:
+    - complexity
+    - maintainability
+    - cyclomaticComplexity
+
+namespaces:
+    src:
+        namespaces:
+            App:
+                path: app
+            Illuminate:
+                path: vendor/laravel/framework/src/Illuminate
+            Symfony:
+                path: vendor/symfony
+report:
+    format: html
+    summary: true
