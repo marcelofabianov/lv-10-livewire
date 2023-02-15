@@ -11,17 +11,17 @@
         "enabled": true,
         "actions": [
             {
-                "action": "./vendor/bin/psalm",
+                "action": "docker exec lw php ./vendor/bin/psalm",
                 "options": [],
                 "conditions": []
             },
             {
-                "action": "./vendor/bin/pint -v",
+                "action": "docker exec lw php ./vendor/bin/pint -v",
                 "options": [],
                 "conditions": []
             },
             {
-                "action": "test --env=testing",
+                "action": "docker exec lw php artisan test --env=testing",
                 "options": [],
                 "conditions": []
             }
